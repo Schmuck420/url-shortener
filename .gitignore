@@ -1,1 +1,5 @@
-x
+target/
+.idea/
+*.iml
+.env
+.DS_Store
