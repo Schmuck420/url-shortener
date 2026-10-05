@@ -14,16 +14,40 @@ import java.util.Map;
 @RestController
 public class UrlController {
     private final ShortUrlService service;
-    public UrlController(ShortUrlService service){this.service=service;}
-    public record CreateRequest(@NotBlank @Pattern(regexp="https?://.+", message="URL must start with http:// or https://") String url) {}
-    public record CreateResponse(String shortCode,String shortUrl,String originalUrl) {}
-    @PostMapping("/api/urls") public ResponseEntity<CreateResponse> create(@Valid @RequestBody CreateRequest req){
-        ShortUrl u=service.create(req.url());
-        return ResponseEntity.ok(new CreateResponse(u.getShortCode(),"/"+u.getShortCode(),u.getOriginalUrl()));
+
+    public UrlController(ShortUrlService service) {
+        this.service = service;
     }
-    @GetMapping("/api/urls/recent") public List<ShortUrl> recent(){return service.recent();}
-    @GetMapping("/api/urls/{code}/analytics") public Map<String,Object> analytics(@PathVariable String code){return service.analytics(code);}
-    @GetMapping("/{code}") public RedirectView redirect(@PathVariable String code){
-        RedirectView v=new RedirectView(service.resolve(code)); v.setStatusCode(org.springframework.http.HttpStatus.FOUND); return v;
+
+    public record CreateRequest(
+            @NotBlank
+            @Pattern(regexp = "https?://.+", message = "URL must start with http:// or https://")
+            String url) {}
+
+    public record CreateResponse(String shortCode, String shortUrl, String originalUrl) {}
+
+    @PostMapping("/api/urls")
+    public ResponseEntity<CreateResponse> create(@Valid @RequestBody CreateRequest req) {
+        ShortUrl u = service.create(req.url());
+        return ResponseEntity.ok(new CreateResponse(u.getShortCode(), "/" + u.getShortCode(), u.getOriginalUrl()));
+    }
+
+    @GetMapping("/api/urls/recent")
+    public List<ShortUrl> recent() {
+        return service.recent();
+    }
+
+    @GetMapping("/api/urls/{code}/analytics")
+    public Map<String, Object> analytics(@PathVariable String code) {
+        return service.analytics(code);
+    }
+
+    // Short codes are always exactly 7 alphanumeric characters.
+    // Restricting this mapping prevents it from capturing the root "/" route.
+    @GetMapping("/{code:[A-Za-z0-9]{7}}")
+    public RedirectView redirect(@PathVariable String code) {
+        RedirectView v = new RedirectView(service.resolve(code));
+        v.setStatusCode(org.springframework.http.HttpStatus.FOUND);
+        return v;
     }
 }
